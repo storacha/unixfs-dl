@@ -1,0 +1,26 @@
+{
+  "name": "unixfs-dl",
+  "version": "0.0.0",
+  "description": "Trusted UnixFS downloader",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "entail"
+  },
+  "keywords": [
+    "IPFS",
+    "unixfs",
+    "download",
+    "stream"
+  ],
+  "author": "Alan Shaw",
+  "license": "Apache-2.0 OR MIT",
+  "dependencies": {
+    "@ipld/dag-pb": "^4.1.2",
+    "ipfs-unixfs": "^11.1.4",
+    "multiformats": "^13.2.2"
+  },
+  "devDependencies": {
+    "entail": "^2.1.2"
+  }
+}
