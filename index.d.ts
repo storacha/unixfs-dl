@@ -1,1 +1,1 @@
-export declare function fetch (url: string|URL): Response
+export declare function fetch (url: string|URL): Promise<Response>

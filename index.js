@@ -45,18 +45,30 @@ export const fetch = async url => {
     offset += MaxRangeSize
   }
 
+  const initRange = `bytes=${ranges[0][0]}-${ranges[0][1]}`
+  const initRes = await globalThis.fetch(url, { headers: { range: initRange } })
+  if (!initRes.ok) {
+    throw new Error(`failed to request: ${initRange} of: ${url}`)
+  }
+
+  const headers = new Headers(initRes.headers)
+  headers.set('Content-Length', size.toString())
+  headers.set('Cache-Control', 'public, max-age=29030400, immutable')
+  headers.set('Etag', `"${root}"`)
+  headers.delete('Content-Range')
+
   const body = ReadableStream.from((async function* () {
-    for (const [first, last] of ranges) {
+    yield * initRes.body
+    for (const [first, last] of ranges.slice(1)) {
       const range = `bytes=${first}-${last}`
-      console.log(`${range} of: ${url}`)
+      // console.log(`${range} of: ${url}`)
       const res = await globalThis.fetch(url, { headers: { range } })
       if (!res.ok) {
         throw new Error(`failed to request: ${range} of: ${url}`)
       }
-      // console.log(res.headers)
       yield * res.body
     }
   })())
 
-  return new Response(body)
+  return new Response(body, { headers })
 }
