@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/storacha/unixfs-dl/compare/v1.0.1...v1.0.2) (2024-09-11)
+
+
+### Bug Fixes
+
+* headers ([5bd4201](https://github.com/storacha/unixfs-dl/commit/5bd4201112bca5ac330e17f7b0e9c98cf1bfb795))
+
 ## [1.0.1](https://github.com/storacha/unixfs-dl/compare/v1.0.0...v1.0.1) (2024-09-11)
 
 
