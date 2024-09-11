@@ -33,9 +33,6 @@ jobs:
       - name: Install Dependencies
         run: pnpm install
         if: ${{ steps.release.outputs.release_created }}
-      - name: Build
-        run: pnpm build
-        if: ${{ steps.release.outputs.release_created }}
       - name: Publish to npm
         run: npm publish --access=public
         env:
