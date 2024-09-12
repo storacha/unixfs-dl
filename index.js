@@ -5,8 +5,16 @@ import { UnixFS } from 'ipfs-unixfs'
 
 const MaxRangeSize = 1024 * 1024 * 100
 
-/** @param {string|URL} url */
-export const fetch = async url => {
+/**
+ * @param {string|URL} url
+ * @param {object} [options]
+ * @param {TransformStream} [options.TransformStream]
+ * @param {number} [options.maxRangeSize]
+ */
+export const fetch = async (url, options) => {
+  const TransformStream = options.TransformStream ?? globalThis.TransformStream
+  const maxRangeSize = options.maxRangeSize ?? MaxRangeSize
+
   const blockURL = new URL(url)
   blockURL.searchParams.set('format', 'raw')
 
@@ -41,8 +49,8 @@ export const fetch = async url => {
   const ranges = []
   let offset = 0
   while (offset < size) {
-    ranges.push([offset, Math.min(offset + MaxRangeSize - 1, size - 1)])
-    offset += MaxRangeSize
+    ranges.push([offset, Math.min(offset + maxRangeSize - 1, size - 1)])
+    offset += maxRangeSize
   }
 
   const initRange = `bytes=${ranges[0][0]}-${ranges[0][1]}`
