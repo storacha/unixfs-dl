@@ -57,8 +57,9 @@ export const fetch = async url => {
   headers.set('Etag', `"${root}"`)
   headers.delete('Content-Range')
 
-  const body = ReadableStream.from((async function* () {
-    yield * initRes.body
+  const { readable, writable } = new TransformStream()
+  ;(async () => {
+    await initRes.body.pipeTo(writable, { preventClose: true })
     for (const [first, last] of ranges.slice(1)) {
       const range = `bytes=${first}-${last}`
       // console.log(`${range} of: ${url}`)
@@ -66,9 +67,10 @@ export const fetch = async url => {
       if (!res.ok) {
         throw new Error(`failed to request: ${range} of: ${url}`)
       }
-      yield * res.body
+      await res.pipeTo(writable, { preventClose: true })
     }
-  })())
+    await writable.close()
+  })()
 
-  return new Response(body, { headers })
+  return new Response(readable, { headers })
 }
