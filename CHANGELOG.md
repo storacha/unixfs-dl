@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/storacha/unixfs-dl/compare/v1.1.0...v1.2.0) (2024-09-12)
+
+
+### Features
+
+* option ([dfef169](https://github.com/storacha/unixfs-dl/commit/dfef169cf2f5011ec2a791231a4abc3572b77605))
+
+
+### Bug Fixes
+
+* optional options ([ada22ac](https://github.com/storacha/unixfs-dl/commit/ada22ac2cef62059ea6868fb67dcab4b82d3f7db))
+* properly close ([57f2076](https://github.com/storacha/unixfs-dl/commit/57f20760547fc3b41ddae1afa03a1154ea72fec0))
+
 ## [1.1.0](https://github.com/storacha/unixfs-dl/compare/v1.0.2...v1.1.0) (2024-09-12)
 
 
