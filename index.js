@@ -67,7 +67,7 @@ export const fetch = async url => {
       if (!res.ok) {
         throw new Error(`failed to request: ${range} of: ${url}`)
       }
-      await res.pipeTo(writable, { preventClose: true })
+      await res.body.pipeTo(writable, { preventClose: true })
     }
     await writable.close()
   })()
