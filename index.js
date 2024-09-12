@@ -12,8 +12,8 @@ const MaxRangeSize = 1024 * 1024 * 100
  * @param {number} [options.maxRangeSize]
  */
 export const fetch = async (url, options) => {
-  const TransformStream = options.TransformStream ?? globalThis.TransformStream
-  const maxRangeSize = options.maxRangeSize ?? MaxRangeSize
+  const TransformStream = options?.TransformStream ?? globalThis.TransformStream
+  const maxRangeSize = options?.maxRangeSize ?? MaxRangeSize
 
   const blockURL = new URL(url)
   blockURL.searchParams.set('format', 'raw')
