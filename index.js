@@ -59,7 +59,8 @@ export const fetch = async url => {
 
   const { readable, writable } = new TransformStream()
   ;(async () => {
-    await initRes.body.pipeTo(writable, { preventClose: true })
+    await initRes.body.pipeTo(writable, { preventClose: ranges.length > 1 })
+    let i = 0
     for (const [first, last] of ranges.slice(1)) {
       const range = `bytes=${first}-${last}`
       // console.log(`${range} of: ${url}`)
@@ -67,9 +68,9 @@ export const fetch = async url => {
       if (!res.ok) {
         throw new Error(`failed to request: ${range} of: ${url}`)
       }
-      await res.body.pipeTo(writable, { preventClose: true })
+      await res.body.pipeTo(writable, { preventClose: i !== ranges.length - 1 })
+      i++
     }
-    await writable.close()
   })()
 
   return new Response(readable, { headers })
