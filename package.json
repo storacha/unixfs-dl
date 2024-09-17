@@ -6,7 +6,8 @@
   "types": "index.d.ts",
   "type": "module",
   "scripts": {
-    "test": "entail"
+    "test": "entail",
+    "coverage": "c8 --reporter=html --reporter=text npm test"
   },
   "keywords": [
     "IPFS",
@@ -16,14 +17,8 @@
   ],
   "author": "Alan Shaw",
   "license": "Apache-2.0 OR MIT",
-  "dependencies": {
-    "@ipld/dag-pb": "^4.1.2",
-    "ipfs-unixfs": "^11.1.4",
-    "multiformats": "^13.2.2"
-  },
   "devDependencies": {
-    "@web3-storage/gateway-lib": "^5.1.2",
-    "@web3-storage/public-bucket": "^1.2.0",
+    "c8": "^10.1.2",
     "entail": "^2.1.2"
   }
 }

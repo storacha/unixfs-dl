@@ -1,51 +1,24 @@
-import { parse as parseLink } from 'multiformats/link'
-import { code as rawCode } from 'multiformats/codecs/raw'
-import { code as pbCode, decode as decodePB } from '@ipld/dag-pb'
-import { UnixFS } from 'ipfs-unixfs'
-
 const MaxRangeSize = 1024 * 1024 * 100
 
 /**
  * @param {string|URL} url
- * @param {object} [options]
- * @param {TransformStream} [options.TransformStream]
- * @param {number} [options.maxRangeSize]
+ * @param {import('./index').Options} [options]
  */
 export const fetch = async (url, options) => {
   const TransformStream = options?.TransformStream ?? globalThis.TransformStream
   const maxRangeSize = options?.maxRangeSize ?? MaxRangeSize
 
-  const blockURL = new URL(url)
-  blockURL.searchParams.set('format', 'raw')
-
-  const rootRes = await globalThis.fetch(blockURL)
-  if (!rootRes.ok) {
-    throw new Error(`failed to request root block: ${blockURL}`)
+  const headRes = await globalThis.fetch(url, { method: 'HEAD' })
+  if (!headRes.ok) {
+    throw new Error(`failed HEAD request: ${url}`)
   }
 
-  const etag = rootRes.headers.get('etag')
-  let root
-  try {
-    root = parseLink(etag.slice(1, -5)) // "bafy.raw"
-  } catch (err) {
-    throw new Error(`failed parse root CID from Etag: ${etag}`, { cause: err })
+  const size = parseInt(headRes.headers.get('Content-Length'))
+  // missing content length header? just fetch it
+  if (isNaN(size)) {
+    return globalThis.fetch(url)
   }
 
-  // if raw then just return the data
-  if (root.code === rawCode) {
-    return rootRes
-  }
-  if (root.code !== pbCode) {
-    throw new Error(`not dag-pb: ${root}`)
-  }
-
-  const rootBytes = new Uint8Array(await rootRes.arrayBuffer())
-  const entry = UnixFS.unmarshal(decodePB(rootBytes).Data)
-  if (entry.type !== 'file') {
-    throw new Error(`not a unixfs file: ${root}`)
-  }
-
-  const size = entry.blockSizes.reduce((t, s) => t + Number(s), 0)
   const ranges = []
   let offset = 0
   while (offset < size) {
@@ -53,7 +26,19 @@ export const fetch = async (url, options) => {
     offset += maxRangeSize
   }
 
+  // if zero size, then just fetch it (get the headers)
+  if (size === 0) {
+    return globalThis.fetch(url)
+  }
+
+  // if a directory index, or not unixfs then just fetch it
+  const etag = headRes.headers.get('etag')
+  if (etag && (etag.startsWith('"DirIndex') || !etag.startsWith('"bafy') || !etag.startsWith('"Qm'))) {
+    return globalThis.fetch(url)
+  }
+
   const initRange = `bytes=${ranges[0][0]}-${ranges[0][1]}`
+  // console.log(`${initRange} of: ${url}`)
   const initRes = await globalThis.fetch(url, { headers: { range: initRange } })
   if (!initRes.ok) {
     throw new Error(`failed to request: ${initRange} of: ${url}`)
@@ -61,8 +46,6 @@ export const fetch = async (url, options) => {
 
   const headers = new Headers(initRes.headers)
   headers.set('Content-Length', size.toString())
-  headers.set('Cache-Control', 'public, max-age=29030400, immutable')
-  headers.set('Etag', `"${root}"`)
   headers.delete('Content-Range')
 
   const { readable, writable } = new TransformStream()
@@ -76,7 +59,8 @@ export const fetch = async (url, options) => {
       if (!res.ok) {
         throw new Error(`failed to request: ${range} of: ${url}`)
       }
-      await res.body.pipeTo(writable, { preventClose: i !== ranges.length - 1 })
+      const isLast = i === ranges.length - 2
+      await res.body.pipeTo(writable, { preventClose: !isLast })
       i++
     }
   })()
