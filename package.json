@@ -20,5 +20,16 @@
   "devDependencies": {
     "c8": "^10.1.2",
     "entail": "^2.1.2"
-  }
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/storacha/unixfs-dl.git"
+  },
+  "bugs": {
+    "url": "https://github.com/storacha/unixfs-dl/issues"
+  },
+  "homepage": "https://github.com/storacha/unixfs-dl#readme"
 }
