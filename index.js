@@ -37,6 +37,11 @@ export const fetch = async (url, options) => {
     return globalThis.fetch(url)
   }
 
+  // if a single range, just fetch it so that the response can be cached
+  if (ranges.length === 1) {
+    return globalThis.fetch(url, { signal: options?.signal })
+  }
+
   const initRange = `bytes=${ranges[0][0]}-${ranges[0][1]}`
   // console.log(`${initRange} of: ${url}`)
   const initRes = await globalThis.fetch(url, { headers: { range: initRange } })

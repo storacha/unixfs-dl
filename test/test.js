@@ -21,6 +21,11 @@ const startServer = async (filepath, contentType) => {
       return res.end()
     }
 
+    if (!req.headers.range) {
+      res.setHeader('X-No-Range', 'true')
+      return pipeline(fs.createReadStream(filepath), res)
+    }
+
     const [start, end] = req.headers.range.split('bytes=')[1].split('-').map(s => parseInt(s))
     res.setHeader('Content-Length', end - start + 1)
     res.setHeader('Content-Range', `bytes ${start}-${end}/${stats.size}`)
@@ -112,6 +117,18 @@ export const test = {
     try {
       const res = await verifiedFetch(assert, server.url, file.hash)
       assert.equal(res.headers.get('Content-Type'), contentType)
+    } finally {
+      await server.close()
+      console.log('removing', file.path)
+      await fs.promises.rm(file.path)
+    }
+  },
+  'should not send byte range request when size is less than max range': async (/** @type {import('entail').assert} */ assert) => {
+    const file = await createFile(1 * MB)
+    const server = await startServer(file.path)
+    try {
+      const res = await verifiedFetch(assert, server.url, file.hash)
+      assert.equal(res.headers.get('x-no-range'), 'true')
     } finally {
       await server.close()
       console.log('removing', file.path)
