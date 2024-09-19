@@ -31,11 +31,6 @@ export const fetch = async (url, options) => {
     offset += maxRangeSize
   }
 
-  // if zero size, then just fetch it (get the headers)
-  if (size === 0) {
-    return globalThis.fetch(url)
-  }
-
   // if a directory index, or not unixfs then just fetch it
   const etag = headRes.headers.get('etag')
   if (etag && (etag.startsWith('"DirIndex') || !etag.startsWith('"bafy') || !etag.startsWith('"Qm'))) {
