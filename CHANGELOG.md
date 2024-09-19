@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://github.com/storacha/unixfs-dl/compare/v1.2.0...v1.3.0) (2024-09-17)
+
+
+### Features
+
+* use HEAD request ([45572e8](https://github.com/storacha/unixfs-dl/commit/45572e8d5cc0f9e818e8c6de6ec809f308bdb7cd))
+
+
+### Bug Fixes
+
+* add repo info ([743100b](https://github.com/storacha/unixfs-dl/commit/743100b712fa86606282fb1f347b2ebb7c9aeaa6))
+
 ## [1.2.0](https://github.com/storacha/unixfs-dl/compare/v1.1.0...v1.2.0) (2024-09-12)
 
 
