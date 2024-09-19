@@ -19,6 +19,11 @@ export const fetch = async (url, options) => {
     return globalThis.fetch(url)
   }
 
+  // if fits in a single range, just fetch it so the response can be cached
+  if (size <= maxRangeSize) {
+    return globalThis.fetch(url, { signal: options?.signal })
+  }
+
   const ranges = []
   let offset = 0
   while (offset < size) {
@@ -35,11 +40,6 @@ export const fetch = async (url, options) => {
   const etag = headRes.headers.get('etag')
   if (etag && (etag.startsWith('"DirIndex') || !etag.startsWith('"bafy') || !etag.startsWith('"Qm'))) {
     return globalThis.fetch(url)
-  }
-
-  // if a single range, just fetch it so that the response can be cached
-  if (ranges.length === 1) {
-    return globalThis.fetch(url, { signal: options?.signal })
   }
 
   const initRange = `bytes=${ranges[0][0]}-${ranges[0][1]}`
