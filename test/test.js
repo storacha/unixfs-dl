@@ -95,7 +95,7 @@ const verifiedFetch = async (assert, url, digest) => {
 
 export const test = {
   'should fetch a big file': async (/** @type {import('entail').assert} */ assert) => {
-    const file = await createFile(1 * GB)
+    const file = await createFile(25 * GB)
     const server = await startServer(file.path)
     try {
       await verifiedFetch(assert, server.url, file.hash)
