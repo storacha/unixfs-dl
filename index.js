@@ -5,7 +5,7 @@ const MaxRangeSize = 1024 * 1024 * 100
  * @param {import('./index').Options} [options]
  */
 export const fetch = async (url, options) => {
-  const TransformStream = options?.TransformStream ?? globalThis.TransformStream
+  const IdentityTransformStream = options?.IdentityTransformStream ?? globalThis.TransformStream
   const maxRangeSize = options?.maxRangeSize ?? MaxRangeSize
 
   const headRes = await globalThis.fetch(url, { method: 'HEAD', signal: options?.signal })
@@ -38,24 +38,27 @@ export const fetch = async (url, options) => {
   }
 
   const initRange = `bytes=${ranges[0][0]}-${ranges[0][1]}`
-  // console.log(`${initRange} of: ${url}`)
   const initRes = await globalThis.fetch(url, { headers: { range: initRange }, signal: options?.signal })
   if (!initRes.ok) {
     throw new Error(`failed to request: ${initRange} of: ${url}`)
+  }
+
+  // if not supports byte ranges, just return the response
+  if (!initRange.headers.has('Content-Range')) {
+    return initRes
   }
 
   const headers = new Headers(initRes.headers)
   headers.set('Content-Length', size.toString())
   headers.delete('Content-Range')
 
-  const { readable, writable } = new TransformStream()
+  const { readable, writable } = new IdentityTransformStream()
   ;(async () => {
     try {
       await initRes.body.pipeTo(writable, { preventClose: ranges.length > 1 })
       let i = 0
       for (const [first, last] of ranges.slice(1)) {
         const range = `bytes=${first}-${last}`
-        // console.log(`${range} of: ${url}`)
         const res = await globalThis.fetch(url, { headers: { range }, signal: options?.signal })
         if (!res.ok) {
           throw new Error(`failed to request: ${range} of: ${url}`)
