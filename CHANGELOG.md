@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.1](https://github.com/storacha/unixfs-dl/compare/v1.4.0...v1.4.1) (2024-09-23)
+
+
+### Bug Fixes
+
+* byte range support detection ([334558d](https://github.com/storacha/unixfs-dl/commit/334558d4b143d0faaed1de2a5916731695823c27))
+* rename identity transform stream option ([924375d](https://github.com/storacha/unixfs-dl/commit/924375dd5672571c7b388243b2a8c905de0b5175))
+
 ## [1.4.0](https://github.com/storacha/unixfs-dl/compare/v1.3.0...v1.4.0) (2024-09-23)
 
 
