@@ -19,16 +19,16 @@ export const fetch = async (url, options) => {
     return globalThis.fetch(url, { signal: options?.signal })
   }
 
+  // if fits in a single range, just fetch it so the response can be cached
+  if (size <= maxRangeSize) {
+    return globalThis.fetch(url, { signal: options?.signal })
+  }
+
   const ranges = []
   let offset = 0
   while (offset < size) {
     ranges.push([offset, Math.min(offset + maxRangeSize - 1, size - 1)])
     offset += maxRangeSize
-  }
-
-  // if zero size, then just fetch it (get the headers)
-  if (size === 0) {
-    return globalThis.fetch(url, { signal: options?.signal })
   }
 
   // if a directory index, or not unixfs then just fetch it
