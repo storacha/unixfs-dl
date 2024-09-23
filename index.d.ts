@@ -9,6 +9,11 @@ export interface Options {
   IdentityTransformStream?: typeof TransformStream
   /** A signal that can be used to abort the operation. */
   signal?: AbortSignal
+  /**
+   * Additional headers to pass along with the request. Note that a `Range`
+   * header added here will be discarded.
+   */
+  headers?: HeadersInit
 }
 
 /**

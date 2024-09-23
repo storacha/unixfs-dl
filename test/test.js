@@ -8,29 +8,32 @@ import crypto from 'node:crypto'
 import { fetch } from '../index.js'
 
 /**
- * @param {string} filepath
+ * @param {{ path: string, hash: string }} file
  * @param {string} [contentType]
  */
-const startServer = async (filepath, contentType) => {
-  const stats = await fs.promises.stat(filepath)
+const startServer = async (file, contentType) => {
+  const stats = await fs.promises.stat(file.path)
   const server = http.createServer((req, res) => {
     res.setHeader('Content-Type', contentType ?? 'application/octet-stream')
 
     if (req.method === 'HEAD') {
+      if (req.headers['if-none-match'] === `"${file.hash}"`) {
+        res.statusCode = 304
+      }
       res.setHeader('Content-Length', stats.size)
       return res.end()
     }
 
     if (!req.headers.range) {
       res.setHeader('X-No-Range', 'true')
-      return pipeline(fs.createReadStream(filepath), res)
+      return pipeline(fs.createReadStream(file.path), res)
     }
 
     const [start, end] = req.headers.range.split('bytes=')[1].split('-').map(s => parseInt(s))
     res.setHeader('Content-Length', end - start + 1)
     res.setHeader('Content-Range', `bytes ${start}-${end}/${stats.size}`)
 
-    pipeline(fs.createReadStream(filepath, { start, end }), res)
+    pipeline(fs.createReadStream(file.path, { start, end }), res)
   })
   return {
     url: await new Promise(resolve => {
@@ -101,7 +104,7 @@ const verifiedFetch = async (assert, url, digest) => {
 export const test = {
   'should fetch a big file': async (/** @type {import('entail').assert} */ assert) => {
     const file = await createFile(5 * GB)
-    const server = await startServer(file.path)
+    const server = await startServer(file)
     try {
       await verifiedFetch(assert, server.url, file.hash)
     } finally {
@@ -113,7 +116,7 @@ export const test = {
   'should preserve headers': async (/** @type {import('entail').assert} */ assert) => {
     const file = await createFile(1 * MB)
     const contentType = `application/test${Date.now()}`
-    const server = await startServer(file.path, contentType)
+    const server = await startServer(file, contentType)
     try {
       const res = await verifiedFetch(assert, server.url, file.hash)
       assert.equal(res.headers.get('Content-Type'), contentType)
@@ -125,7 +128,7 @@ export const test = {
   },
   'should not send byte range request when size is less than max range': async (/** @type {import('entail').assert} */ assert) => {
     const file = await createFile(1 * MB)
-    const server = await startServer(file.path)
+    const server = await startServer(file)
     try {
       const res = await verifiedFetch(assert, server.url, file.hash)
       assert.equal(res.headers.get('x-no-range'), 'true')
@@ -137,7 +140,7 @@ export const test = {
   },
   'should abort': async (/** @type {import('entail').assert} */ assert) => {
     const file = await createFile(1 * MB)
-    const server = await startServer(file.path)
+    const server = await startServer(file)
     const controller = new AbortController()
     try {
       const res = await fetch(server.url, { maxRangeSize: 1024, signal: controller.signal })
@@ -150,6 +153,25 @@ export const test = {
       assert.fail('did not abort')
     } catch (err) {
       assert.equal(err.name, 'AbortError')
+    } finally {
+      await server.close()
+      console.log('removing', file.path)
+      await fs.promises.rm(file.path)
+    }
+  },
+  'should support conditional request with If-None-Match': async (/** @type {import('entail').assert} */ assert) => {
+    const file = await createFile(1 * MB)
+    const server = await startServer(file)
+    const controller = new AbortController()
+    try {
+      const res = await fetch(server.url, {
+        maxRangeSize: 1024,
+        signal: controller.signal,
+        headers: {
+          'If-None-Match': `"${file.hash}"`
+        },
+      })
+      assert.equal(res.status, 304)
     } finally {
       await server.close()
       console.log('removing', file.path)
