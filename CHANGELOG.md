@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.4.0](https://github.com/storacha/unixfs-dl/compare/v1.3.0...v1.4.0) (2024-09-23)
+
+
+### Features
+
+* abortable ([#8](https://github.com/storacha/unixfs-dl/issues/8)) ([0089a90](https://github.com/storacha/unixfs-dl/commit/0089a9063d7cf0113d3d28a0194bccb6a72c04ff))
+* avoid range request when file size is less than max range ([#9](https://github.com/storacha/unixfs-dl/issues/9)) ([970e858](https://github.com/storacha/unixfs-dl/commit/970e85818e3584d99f527cbb09d0872b09b32455))
+
+
+### Bug Fixes
+
+* okay maybe not that big in CI ([d1cd529](https://github.com/storacha/unixfs-dl/commit/d1cd5299ff7667cbc5f0b84c23932897e20723f4))
+* type of TransformStream not an instance ([13fa6c6](https://github.com/storacha/unixfs-dl/commit/13fa6c6c81d05b4b6e2f14195c5ecef018a6b7df))
+* use big file in big file test ([b92c0a3](https://github.com/storacha/unixfs-dl/commit/b92c0a3bfeeb321a00829419caa361d8ba00482e))
+
 ## [1.3.0](https://github.com/storacha/unixfs-dl/compare/v1.2.0...v1.3.0) (2024-09-17)
 
 
