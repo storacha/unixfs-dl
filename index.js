@@ -44,7 +44,7 @@ export const fetch = async (url, options) => {
   }
 
   // if not supports byte ranges, just return the response
-  if (!initRange.headers.has('Content-Range')) {
+  if (!initRes.headers.has('Content-Range')) {
     return initRes
   }
 
