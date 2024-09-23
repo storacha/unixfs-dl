@@ -117,5 +117,26 @@ export const test = {
       console.log('removing', file.path)
       await fs.promises.rm(file.path)
     }
-  }
+  },
+  'should abort': async (/** @type {import('entail').assert} */ assert) => {
+    const file = await createFile(1 * MB)
+    const server = await startServer(file.path)
+    const controller = new AbortController()
+    try {
+      const res = await fetch(server.url, { maxRangeSize: 1024, signal: controller.signal })
+      assert.equal(res.ok, true)
+      const chunks = []
+      for await (const chunk of res.body) {
+        chunks.push(chunk)
+        if (chunks.length === 5) controller.abort()
+      }
+      assert.fail('did not abort')
+    } catch (err) {
+      assert.equal(err.name, 'AbortError')
+    } finally {
+      await server.close()
+      console.log('removing', file.path)
+      await fs.promises.rm(file.path)
+    }
+  },
 }

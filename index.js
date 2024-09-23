@@ -8,7 +8,7 @@ export const fetch = async (url, options) => {
   const TransformStream = options?.TransformStream ?? globalThis.TransformStream
   const maxRangeSize = options?.maxRangeSize ?? MaxRangeSize
 
-  const headRes = await globalThis.fetch(url, { method: 'HEAD' })
+  const headRes = await globalThis.fetch(url, { method: 'HEAD', signal: options?.signal })
   if (!headRes.ok) {
     throw new Error(`failed HEAD request: ${url}`)
   }
@@ -16,7 +16,7 @@ export const fetch = async (url, options) => {
   const size = parseInt(headRes.headers.get('Content-Length'))
   // missing content length header? just fetch it
   if (isNaN(size)) {
-    return globalThis.fetch(url)
+    return globalThis.fetch(url, { signal: options?.signal })
   }
 
   const ranges = []
@@ -28,18 +28,18 @@ export const fetch = async (url, options) => {
 
   // if zero size, then just fetch it (get the headers)
   if (size === 0) {
-    return globalThis.fetch(url)
+    return globalThis.fetch(url, { signal: options?.signal })
   }
 
   // if a directory index, or not unixfs then just fetch it
   const etag = headRes.headers.get('etag')
   if (etag && (etag.startsWith('"DirIndex') || !etag.startsWith('"bafy') || !etag.startsWith('"Qm'))) {
-    return globalThis.fetch(url)
+    return globalThis.fetch(url, { signal: options?.signal })
   }
 
   const initRange = `bytes=${ranges[0][0]}-${ranges[0][1]}`
   // console.log(`${initRange} of: ${url}`)
-  const initRes = await globalThis.fetch(url, { headers: { range: initRange } })
+  const initRes = await globalThis.fetch(url, { headers: { range: initRange }, signal: options?.signal })
   if (!initRes.ok) {
     throw new Error(`failed to request: ${initRange} of: ${url}`)
   }
@@ -50,18 +50,22 @@ export const fetch = async (url, options) => {
 
   const { readable, writable } = new TransformStream()
   ;(async () => {
-    await initRes.body.pipeTo(writable, { preventClose: ranges.length > 1 })
-    let i = 0
-    for (const [first, last] of ranges.slice(1)) {
-      const range = `bytes=${first}-${last}`
-      // console.log(`${range} of: ${url}`)
-      const res = await globalThis.fetch(url, { headers: { range } })
-      if (!res.ok) {
-        throw new Error(`failed to request: ${range} of: ${url}`)
+    try {
+      await initRes.body.pipeTo(writable, { preventClose: ranges.length > 1 })
+      let i = 0
+      for (const [first, last] of ranges.slice(1)) {
+        const range = `bytes=${first}-${last}`
+        // console.log(`${range} of: ${url}`)
+        const res = await globalThis.fetch(url, { headers: { range }, signal: options?.signal })
+        if (!res.ok) {
+          throw new Error(`failed to request: ${range} of: ${url}`)
+        }
+        const isLast = i === ranges.length - 2
+        await res.body.pipeTo(writable, { preventClose: !isLast })
+        i++
       }
-      const isLast = i === ranges.length - 2
-      await res.body.pipeTo(writable, { preventClose: !isLast })
-      i++
+    } catch (err) {
+      await writable.abort(err)
     }
   })()
 
