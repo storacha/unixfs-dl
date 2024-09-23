@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/storacha/unixfs-dl/compare/v1.4.1...v1.5.0) (2024-09-23)
+
+
+### Features
+
+* support custom headers and 304 response to If-None-Match header ([bd40fb8](https://github.com/storacha/unixfs-dl/commit/bd40fb8ed927373c9af1852f602bbd5ff6c43827))
+
 ## [1.4.1](https://github.com/storacha/unixfs-dl/compare/v1.4.0...v1.4.1) (2024-09-23)
 
 
