@@ -8,17 +8,27 @@ importers:
 
   .:
     devDependencies:
+      '@ipld/dag-pb':
+        specifier: ^4.1.2
+        version: 4.1.2
       c8:
         specifier: ^10.1.2
         version: 10.1.2
       entail:
         specifier: ^2.1.2
         version: 2.1.2
+      multiformats:
+        specifier: ^13.3.0
+        version: 13.3.0
 
 packages:
 
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
+
+  '@ipld/dag-pb@4.1.2':
+    resolution: {integrity: sha512-BSztO4l3C+ya9HjCaQot26Y4AVsqIKtnn6+23ubc1usucnf6yoTBme18oCCdM6gKBMxuPqju5ye3lh9WEJsdeQ==}
+    engines: {node: '>=16.0.0', npm: '>=7.0.0'}
 
   '@isaacs/cliui@8.0.2':
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
@@ -255,6 +265,9 @@ packages:
     resolution: {integrity: sha512-tzzskb3bG8LvYGFF/mDTpq3jpI6Q9wc3LEmBaghu+DdCssd1FakN7Bc0hVNmEyGq1bq3RgfkCb3cmQLpNPOroA==}
     engines: {node: '>=4'}
 
+  multiformats@13.3.0:
+    resolution: {integrity: sha512-CBiqvsufgmpo01VT5ze94O+uc+Pbf6f/sThlvWss0sBZmAOu6GQn5usrYV2sf2mr17FWYc0rO8c/CNe2T90QAA==}
+
   p-limit@3.1.0:
     resolution: {integrity: sha512-TYOanM3wGwNGsZN2cVTYPArw454xnXj5qmWF1bEoAc4+cU/ol7GVh7odevjp1FNHduHc3KZMcFduxU5Xc6uJRQ==}
     engines: {node: '>=10'}
@@ -394,6 +407,10 @@ packages:
 snapshots:
 
   '@bcoe/v8-coverage@0.2.3': {}
+
+  '@ipld/dag-pb@4.1.2':
+    dependencies:
+      multiformats: 13.3.0
 
   '@isaacs/cliui@8.0.2':
     dependencies:
@@ -622,6 +639,8 @@ snapshots:
   minipass@7.1.2: {}
 
   mri@1.2.0: {}
+
+  multiformats@13.3.0: {}
 
   p-limit@3.1.0:
     dependencies:

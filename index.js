@@ -1,4 +1,4 @@
-const MaxRangeSize = 1024 * 1024 * 100
+export const MaxRangeSize = 1024 * 1024 * 100
 
 /**
  * @param {string|URL} url
@@ -40,8 +40,8 @@ export const fetch = async (url, options) => {
   }
 
   // if a directory index, or not unixfs then just fetch it
-  const etag = headRes.headers.get('etag')
-  if (etag && (etag.startsWith('"DirIndex') || !etag.startsWith('"bafy') || !etag.startsWith('"Qm'))) {
+  const etag = headRes.headers.get('Etag')
+  if (etag && !(etag.startsWith('"bafy') || etag.startsWith('"Qm'))) {
     return globalThis.fetch(url, { headers, signal })
   }
 

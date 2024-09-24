@@ -5,16 +5,27 @@ import path from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import crypto from 'node:crypto'
-import { fetch } from '../index.js'
+import { sha256 } from 'multiformats/hashes/sha2'
+import * as Digest from 'multiformats/hashes/digest'
+import * as Link from 'multiformats/link'
+import * as raw from 'multiformats/codecs/raw'
+import * as dagPB from '@ipld/dag-pb'
+import { fetch, MaxRangeSize } from '../index.js'
 
 /**
- * @param {{ path: string, hash: string }} file
+ * @typedef {{ path: string, hash: import('multiformats').Link }} File
+ * @typedef {(digest: import('multiformats').Digest) => import('multiformats').Link} Linker
+ */
+
+/**
+ * @param {File} file
  * @param {string} [contentType]
  */
 const startServer = async (file, contentType) => {
   const stats = await fs.promises.stat(file.path)
   const server = http.createServer((req, res) => {
     res.setHeader('Content-Type', contentType ?? 'application/octet-stream')
+    res.setHeader('Etag', `"${file.hash}"`)
 
     if (req.method === 'HEAD') {
       if (req.headers['if-none-match'] === `"${file.hash}"`) {
@@ -53,7 +64,16 @@ const startServer = async (file, contentType) => {
 const MB = 1024 * 1024
 const GB = 1024 * MB
 
-const createFile = async size => {
+/** @type {Linker} */
+const dagPBLinker = { link: digest => Link.create(dagPB.code, digest) }
+/** @type {Linker} */
+const rawLinker = { link: digest => Link.create(raw.code, digest) }
+
+/**
+ * @param {number} size 
+ * @param {Linker} linker
+ */
+const createFile = async (size, linker = dagPBLinker) => {
   const hash = crypto.createHash('sha256')
   const filename = `unixfs-dl-${Date.now()}`
   const filepath = path.join(os.tmpdir(), filename)
@@ -70,19 +90,21 @@ const createFile = async size => {
     }()),
     fs.createWriteStream(filepath)
   )
-  const digest = hash.digest('hex')
-  console.log(`file hash: ${digest}`)
-  return { path: filepath, hash: digest }
+  const digest = hash.digest()
+  const link = linker.link(Digest.create(sha256.code, digest))
+  console.log(`file hash: ${link}`)
+  return { path: filepath, hash: link }
 }
 
 /**
  * @param {import('entail').Assert} assert
  * @param {URL} url
- * @param {string} digest Hex encoded sha-256 hash
+ * @param {File} file
+ * @param {Linker} linker
  */
-const verifiedFetch = async (assert, url, digest) => {
+const verifiedFetch = async (assert, url, file, linker = dagPBLinker) => {
   let total = 0
-  const intervalID = setInterval(() => console.log(`received ${total.toLocaleString()} bytes`), 10000)
+  const intervalID = setInterval(() => console.log(`received ${total.toLocaleString()} bytes`), 1000)
   try {
     const hash = crypto.createHash('sha256')
     const res = await fetch(url)
@@ -92,7 +114,9 @@ const verifiedFetch = async (assert, url, digest) => {
       total += chunk.length
     }
     console.log(`received ${total.toLocaleString()} bytes`)
-    assert.equal(hash.digest('hex'), digest)
+    const digest = hash.digest()
+    const link = linker.link(Digest.create(sha256.code, digest))
+    assert.equal(link.toString(), file.hash.toString())
     return res
   } catch (err) {
     throw err
@@ -106,7 +130,8 @@ export const test = {
     const file = await createFile(5 * GB)
     const server = await startServer(file)
     try {
-      await verifiedFetch(assert, server.url, file.hash)
+      const res = await verifiedFetch(assert, server.url, file)
+      assert.equal(res.headers.get('X-No-Range'), null)
     } finally {
       await server.close()
       console.log('removing', file.path)
@@ -114,12 +139,13 @@ export const test = {
     }
   },
   'should preserve headers': async (/** @type {import('entail').assert} */ assert) => {
-    const file = await createFile(1 * MB)
+    const file = await createFile(MaxRangeSize + 1)
     const contentType = `application/test${Date.now()}`
     const server = await startServer(file, contentType)
     try {
-      const res = await verifiedFetch(assert, server.url, file.hash)
+      const res = await verifiedFetch(assert, server.url, file)
       assert.equal(res.headers.get('Content-Type'), contentType)
+      assert.equal(res.headers.get('X-No-Range'), null)
     } finally {
       await server.close()
       console.log('removing', file.path)
@@ -127,10 +153,22 @@ export const test = {
     }
   },
   'should not send byte range request when size is less than max range': async (/** @type {import('entail').assert} */ assert) => {
-    const file = await createFile(1 * MB)
+    const file = await createFile(MaxRangeSize - 1)
     const server = await startServer(file)
     try {
-      const res = await verifiedFetch(assert, server.url, file.hash)
+      const res = await verifiedFetch(assert, server.url, file)
+      assert.equal(res.headers.get('x-no-range'), 'true')
+    } finally {
+      await server.close()
+      console.log('removing', file.path)
+      await fs.promises.rm(file.path)
+    }
+  },
+  'should not send byte range request when non-unixfs': async (/** @type {import('entail').assert} */ assert) => {
+    const file = await createFile(MaxRangeSize + 1, rawLinker)
+    const server = await startServer(file)
+    try {
+      const res = await verifiedFetch(assert, server.url, file, rawLinker)
       assert.equal(res.headers.get('x-no-range'), 'true')
     } finally {
       await server.close()
@@ -139,7 +177,7 @@ export const test = {
     }
   },
   'should abort': async (/** @type {import('entail').assert} */ assert) => {
-    const file = await createFile(1 * MB)
+    const file = await createFile(MaxRangeSize + 1)
     const server = await startServer(file)
     const controller = new AbortController()
     try {
@@ -160,7 +198,7 @@ export const test = {
     }
   },
   'should support conditional request with If-None-Match': async (/** @type {import('entail').assert} */ assert) => {
-    const file = await createFile(1 * MB)
+    const file = await createFile(MaxRangeSize + 1)
     const server = await startServer(file)
     const controller = new AbortController()
     try {
