@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/storacha/unixfs-dl/compare/v1.5.0...v1.5.1) (2024-09-24)
+
+
+### Bug Fixes
+
+* unixfs detection ([3053807](https://github.com/storacha/unixfs-dl/commit/3053807672c5d9b552927d817a683f082f57fe84))
+
 ## [1.5.0](https://github.com/storacha/unixfs-dl/compare/v1.4.1...v1.5.0) (2024-09-23)
 
 
